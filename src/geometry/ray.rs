@@ -35,11 +35,11 @@ impl Ray {
 
     }
 
-    pub fn at(self, t: Float) -> Point3 {
+    pub fn at(&self, t: Float) -> Point3 {
         return self.o + self.d * t;
     }
 
-    pub fn to_string(self) -> String {
+    pub fn to_string(&self) -> String {
         format!(
             "Origin: {}, Direction: {}, t_max: {}, time: {}",
             self.o, self.d, self.t_max, self.time
@@ -92,9 +92,30 @@ impl RayDifferential {
     }
 
     pub fn scale_differentials(mut self, s: Float) {
-        self.rx_origin = self.ray.o + (self.rx_origin - self.ray.o) * s;
-        self.ry_origin = self.ray.o + (self.ry_origin - self.ray.o) * s;
-        self.rx_direction = self.ray.d + (self.rx_direction - self.ray.d) * s;
-        self.ry_direction = self.ray.d + (self.ry_direction - self.ray.d) * s;
+        self.rx_origin = self.ray.o + (&self.rx_origin - self.ray.o) * s;
+        self.ry_origin = self.ray.o + (&self.ry_origin - self.ray.o) * s;
+        self.rx_direction = self.ray.d + (&self.rx_direction - self.ray.d) * s;
+        self.ry_direction = self.ray.d + (&self.ry_direction - self.ray.d) * s;
     }
+}
+
+pub fn offset_ray_origin(p: &Point3, p_error: &Vector3, n: &Vector3, wo: &Vector3) -> Point3 {
+    let d = n.abs().dot(p_error);
+    let mut offset = d * Vector3::new(d, d, d);
+
+    if n.dot(wo) < 0.0 {
+        offset = -offset;
+    }
+
+    let mut po = p + offset;
+
+    for i in 0..3 {
+        if offset[i] > 0.0 {
+            po[i] = next_float_up(po[i]);
+        } else if offset[i] < 0.0 {
+            po[i] = next_float_down(po[i]);
+        }
+    }
+
+    po
 }

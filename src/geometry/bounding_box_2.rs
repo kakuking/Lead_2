@@ -34,16 +34,16 @@ impl Bounds2f {
         }
     }
 
-    pub fn diagonal(self) -> Vector2 {
+    pub fn diagonal(&self) -> Vector2 {
         self.p_max - self.p_min
     }
 
-    pub fn area(self) -> Float {
+    pub fn area(&self) -> Float {
         let diag = self.diagonal();
         diag.x * diag.y
     }
     // Which is longer, x or y
-    pub fn max_extent(self) -> usize {
+    pub fn max_extent(&self) -> usize {
         let diag = self.diagonal();
 
         if diag.x > diag.y {
@@ -53,11 +53,11 @@ impl Bounds2f {
         1
     }
 
-    pub fn lerp(self, t: Point2) -> Point2 {
+    pub fn lerp(&self, t: Point2) -> Point2 {
         Point2::new(lerp(t.x, self.p_min.x, self.p_max.x), lerp(t.y, self.p_min.y, self.p_max.y))
     }
 
-    pub fn offset(self, p: Point2) -> Vector2 {
+    pub fn offset(&self, p: Point2) -> Vector2 {
         let mut o = p - self.p_min;
         if self.p_max.x > self.p_min.x {
             o.x /= self.p_max.x - self.p_min.x;
@@ -69,12 +69,12 @@ impl Bounds2f {
         o
     }
 
-    pub fn inside(self, c: &Point2) -> bool {
+    pub fn inside(&self, c: &Point2) -> bool {
         self.p_min.x <= c.x && c.x <= self.p_max.x && 
         self.p_min.y <= c.y && c.y <= self.p_max.y 
     }
 
-    pub fn bounding_sphere(self, c: &mut Point2, rad: &mut Float) {
+    pub fn bounding_sphere(&self, c: &mut Point2, rad: &mut Float) {
         let diag = self.diagonal();
         *c = self.p_min + diag * 0.5;
         *rad = if self.inside(c) {

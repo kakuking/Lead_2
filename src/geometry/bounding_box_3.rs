@@ -1,6 +1,6 @@
 use crate::common::*;
 use std::fmt::Debug;
-use std::ops::{Index, IndexMut};
+use std::ops::{Mul, Index, IndexMut};
 use std::cmp::PartialEq;
 
 #[derive(Debug, Clone, Copy)]
@@ -34,11 +34,11 @@ impl Bounds3f {
         }
     }
 
-    pub fn diagonal(self) -> Vector3 {
+    pub fn diagonal(&self) -> Vector3 {
         self.p_max - self.p_min
     }
 
-    pub fn corner(self, corner: usize) -> Point3 {
+    pub fn corner(&self, corner: usize) -> Point3 {
         let x_idx = corner & 1usize;
         let y_idx = if corner & 2usize == 0usize { 0 } else { 1 };
         let z_idx = if corner & 4usize == 0usize { 0 } else { 1 };
@@ -46,18 +46,18 @@ impl Bounds3f {
         Point3::new(self[x_idx].x, self[y_idx].y, self[z_idx].z)
     }
 
-    pub fn surface_area(self) -> Float {
+    pub fn surface_area(&self) -> Float {
         let diag = self.diagonal();
         2.0 * (diag.x * diag.y + diag.x * diag.z + diag.z * diag.y)
     }
 
-    pub fn volume(self) -> Float {
+    pub fn volume(&self) -> Float {
         let diag = self.diagonal();
         diag.x * diag.y * diag.z
     }
 
     // Which is longer, x, y or z
-    pub fn max_extent(self) -> usize {
+    pub fn max_extent(&self) -> usize {
         let diag = self.diagonal();
 
         if diag.x > diag.y && diag.x > diag.z {
@@ -68,11 +68,11 @@ impl Bounds3f {
         2
     }
 
-    pub fn lerp(self, t: Point3) -> Point3 {
+    pub fn lerp(&self, t: Point3) -> Point3 {
         Point3::new(lerp(t.x, self.p_min.x, self.p_max.x), lerp(t.y, self.p_min.y, self.p_max.y), lerp(t.z, self.p_min.z, self.p_max.z))
     }
 
-    pub fn offset(self, p: Point3) -> Vector3 {
+    pub fn offset(&self, p: Point3) -> Vector3 {
         let mut o = p - self.p_min;
         if self.p_max.x > self.p_min.x {
             o.x /= self.p_max.x - self.p_min.x;
@@ -87,13 +87,13 @@ impl Bounds3f {
         o
     }
 
-    pub fn inside(self, c: &Point3) -> bool {
+    pub fn inside(&self, c: &Point3) -> bool {
         self.p_min.x <= c.x && c.x <= self.p_max.x && 
         self.p_min.y <= c.y && c.y <= self.p_max.y && 
         self.p_min.z <= c.z && c.z <= self.p_max.z 
     }
 
-    pub fn bounding_sphere(self, c: &mut Point3, rad: &mut Float) {
+    pub fn bounding_sphere(&self, c: &mut Point3, rad: &mut Float) {
         let diag = self.diagonal();
         *c = self.p_min + diag * 0.5;
         *rad = if self.inside(c) {
@@ -183,5 +183,25 @@ impl PartialEq for Bounds3f {
 
     fn ne(&self, other: &Self) -> bool {
         self.p_max != other.p_max || self.p_min != other.p_min
+    }
+}
+
+impl Mul<&Bounds3f> for na::Similarity3<Float> {
+    type Output = Bounds3f;
+
+    fn mul(self, rhs: &Bounds3f) -> Self::Output {
+        let p1 = self * &rhs.p_min;
+        let p2 = self * &rhs.p_max;
+        Bounds3f::init(&p1, &p2)
+    }
+}
+
+impl Mul<&Bounds2f> for na::Transform2<Float> {
+    type Output = Bounds2f;
+
+    fn mul(self, rhs: &Bounds2f) -> Self::Output {
+        let p1 = self * &rhs.p_min;
+        let p2 = self * &rhs.p_max;
+        Bounds2f::init(&p1, &p2)
     }
 }
