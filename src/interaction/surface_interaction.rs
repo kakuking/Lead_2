@@ -9,6 +9,24 @@ pub struct ShadingInfo {
     pub dndu: Vector3, pub dndv: Vector3
 }
 
+impl ShadingInfo {
+    pub fn new() -> Self {
+        Self {
+            n: Vector3::new(0.0, 0.0, 0.0),
+            dpdu: Vector3::new(0.0, 0.0, 0.0), dpdv: Vector3::new(0.0, 0.0, 0.0),
+            dndu: Vector3::new(0.0, 0.0, 0.0), dndv: Vector3::new(0.0, 0.0, 0.0)
+        }
+    }
+
+    pub fn init(n: &Vector3, dpdu: &Vector3, dpdv: &Vector3, dndu: &Vector3, dndv: &Vector3) -> Self {
+        Self {
+            n: n.clone(),
+            dpdu: dpdu.clone(), dpdv: dpdv.clone(),
+            dndu: dndu.clone(), dndv: dndv.clone() 
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SurfaceInteraction {
     pub interaction: Interaction,
@@ -30,6 +48,26 @@ pub struct SurfaceInteraction {
 }
 
 impl SurfaceInteraction {
+    pub fn new() -> Self {
+        Self {
+            interaction: Interaction::new(),
+            uv: Point2::new(0.0, 0.0),
+
+            dpdu: Vector3::new(0.0, 0.0, 0.0), dpdv: Vector3::new(0.0, 0.0, 0.0),
+            dndu: Vector3::new(0.0, 0.0, 0.0), dndv: Vector3::new(0.0, 0.0, 0.0),
+
+            shading: ShadingInfo::new(),
+
+            shape: None,
+            primitive: None,
+            bsdf: None, bssrdf: None,
+
+            dpdx: Vector3::new(0.0, 0.0, 0.0), dpdy: Vector3::new(0.0, 0.0, 0.0),
+            dudx: 0.0, dvdx: 0.0,
+            dudy: 0.0, dvdy: 0.0
+        }
+    }
+
     pub fn init(p: &Point3, p_error: &Vector3, uv: &Point2, wo: &Vector3, 
         dpdu: &Vector3, dpdv: &Vector3, dndu: &Vector3, dndv: &Vector3, time: Float, shape: Option<Arc<dyn Shape>>) -> Self {
         let mut normal = dpdu.cross(dpdv).normalize();
@@ -100,7 +138,7 @@ impl SurfaceInteraction {
     }
 }
 
-impl Mul<&SurfaceInteraction> for na::Similarity3<Float> {
+impl Mul<&SurfaceInteraction> for Transform {
     type Output = SurfaceInteraction;
 
     fn mul(self, rhs: &SurfaceInteraction) -> Self::Output {

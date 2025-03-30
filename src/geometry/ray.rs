@@ -1,4 +1,5 @@
 use crate::common::*;
+use std::ops::Mul;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ray {
@@ -118,4 +119,34 @@ pub fn offset_ray_origin(p: &Point3, p_error: &Vector3, n: &Vector3, wo: &Vector
     }
 
     po
+}
+
+impl Mul<&Ray> for Transform {
+    type Output = Ray;
+
+    fn mul(self, rhs: &Ray) -> Self::Output {
+        let o_new = self * rhs.o;
+        let d_new = self * rhs.d;
+
+        Ray::init(&o_new, &d_new, Some(rhs.t_max), Some(rhs.time))
+    }
+}
+
+impl Mul<&RayDifferential> for Transform {
+    type Output = RayDifferential;
+
+    fn mul(self, rhs: &RayDifferential) -> Self::Output {
+        let ray = self * &rhs.ray;
+        let rx_origin = self * rhs.rx_origin;
+        let rx_direction = self * rhs.rx_direction;
+        let ry_origin = self * rhs.ry_origin;
+        let ry_direction = self * rhs.ry_direction;
+
+        RayDifferential {
+            ray,
+            rx_origin, rx_direction,
+            ry_origin, ry_direction,
+            has_differentials: rhs.has_differentials
+        }
+    }
 }

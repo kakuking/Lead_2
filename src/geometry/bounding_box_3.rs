@@ -103,9 +103,81 @@ impl Bounds3f {
         }
     }
 
-    //TODO - impl this
-    pub fn intersect_p(_ray: &Ray, _hit_t0: &mut Float, _hit_t1: &mut Float) -> bool {
-        false
+    pub fn intersect_p(&self, ray: &Ray, hit_t0: &mut Float, hit_t1: &mut Float) -> bool {
+        let mut t0: Float = 0.0;
+        let mut t1: Float = ray.t_max;
+
+        // Checks for x then y then z slabs, if t near > t far at any point, return false
+        for i in 0..3{
+            let inv_ray_dir = 1.0 / ray.d[i];
+            let mut t_near = (self.p_min[i] - ray.o[i]) * inv_ray_dir;
+            let mut t_far = (self.p_max[i] - ray.o[i]) * inv_ray_dir;
+
+            if t_near > t_far {
+                let temp = t_near;
+                t_near = t_far;
+                t_far = temp;
+            }
+
+            t0 = if t_near > t0 { t_near } else { t0 };
+            t1 = if t_far < t1 { t_far } else { t1 };
+            if t0 > t1 { return false; }
+        }
+
+        *hit_t0 = t0;
+        *hit_t1 = t1;
+
+        true
+    }
+
+    pub fn intersect_p_with_inv(&self, ray: &Ray, inv_dir: &Vector3, dir_is_neg: [usize; 3]) -> bool {
+        // Calculate initial t values for x-axis
+        let mut t_min = (self[dir_is_neg[0]].x - ray.o.x) * inv_dir.x;
+        let mut t_max = (self[1 - dir_is_neg[0]].x - ray.o.x) * inv_dir.x;
+
+        // Calculate t values for y-axis
+        let ty_min = (self[dir_is_neg[1]].y - ray.o.y) * inv_dir.y;
+        let ty_max = (self[1 - dir_is_neg[1]].y - ray.o.y) * inv_dir.y;
+
+        // Apply robust intersection offset
+        t_max *= 1.0 + 2.0 * gamma(3.0);
+        let ty_max = ty_max * (1.0 + 2.0 * gamma(3.0));
+
+        // Check for non-intersection in x and y
+        if t_min > ty_max || ty_min > t_max {
+            return false;
+        }
+
+        // Update t_min and t_max with y-axis results
+        if ty_min > t_min {
+            t_min = ty_min;
+        }
+        if ty_max < t_max {
+            t_max = ty_max;
+        }
+
+        // Calculate t values for z-axis
+        let tz_min = (self[dir_is_neg[2]].z - ray.o.z) * inv_dir.z;
+        let tz_max = (self[1 - dir_is_neg[2]].z - ray.o.z) * inv_dir.z;
+
+        // Apply robust intersection offset for z
+        let tz_max = tz_max * (1.0 + 2.0 * gamma(3.0));
+
+        // Check for non-intersection in z
+        if t_min > tz_max || tz_min > t_max {
+            return false;
+        }
+
+        // Update t_min and t_max with z-axis results
+        if tz_min > t_min {
+            t_min = tz_min;
+        }
+        if tz_max < t_max {
+            t_max = tz_max;
+        }
+
+        // Final intersection test
+        (t_min < ray.t_max) && (t_max > 0.0) 
     }
 
     pub fn union_pt(b: &Self, p: &Point3) -> Self {
@@ -186,7 +258,7 @@ impl PartialEq for Bounds3f {
     }
 }
 
-impl Mul<&Bounds3f> for na::Similarity3<Float> {
+impl Mul<&Bounds3f> for Transform {
     type Output = Bounds3f;
 
     fn mul(self, rhs: &Bounds3f) -> Self::Output {
