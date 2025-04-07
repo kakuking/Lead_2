@@ -1,13 +1,13 @@
 use crate::common::*;
 use std::ops::Mul;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Ray {
     pub o: na::Point3<Float>,
     pub d: na::Vector3<Float>,
     pub t_max: Float,
     pub time: Float,
-    // pub medium: Arc<Medium>
+    pub medium: Option<Arc<dyn Medium>>
 }
 
 impl Ray {
@@ -16,11 +16,12 @@ impl Ray {
             t_max: INFINITY,
             time: 0.0,
             o: na::Point3::new(0.0, 0.0, 0.0),
-            d: na::Vector3::new(0.0, 0.0, 0.0)
+            d: na::Vector3::new(0.0, 0.0, 0.0),
+            medium: None
         }
     }
 
-    pub fn init(o: &Point3, d: &Vector3, t_max: Option<Float>, time: Option<Float>) -> Self {
+    pub fn init(o: &Point3, d: &Vector3, t_max: Option<Float>, time: Option<Float>, medium: Option<Arc<dyn Medium>>) -> Self {
         Self {
             o: o.clone(),
             d: d.clone(),
@@ -31,9 +32,9 @@ impl Ray {
             time: match time {
                 Some(t) => t,
                 None => 0.0
-            }
+            },
+            medium: medium
         }
-
     }
 
     pub fn at(&self, t: Float) -> Point3 {
@@ -48,7 +49,7 @@ impl Ray {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct RayDifferential {
     pub ray: Ray,
     pub has_differentials: bool,
@@ -70,9 +71,9 @@ impl RayDifferential {
         }
     }
 
-    pub fn init(o: &Point3, d: &Vector3, t_max: Option<Float>, time: Option<Float>) -> Self {
+    pub fn init(o: &Point3, d: &Vector3, t_max: Option<Float>, time: Option<Float>, medium: Option<Arc<dyn Medium>>) -> Self {
         Self {
-            ray: Ray::init(o, d, t_max, time),
+            ray: Ray::init(o, d, t_max, time, medium),
             has_differentials: false,
             rx_origin: Point3::new(0.0, 0.0, 0.0),
             ry_origin: Point3::new(0.0, 0.0, 0.0),
@@ -128,7 +129,7 @@ impl Mul<&Ray> for Transform {
         let o_new = self * rhs.o;
         let d_new = self * rhs.d;
 
-        Ray::init(&o_new, &d_new, Some(rhs.t_max), Some(rhs.time))
+        Ray::init(&o_new, &d_new, Some(rhs.t_max), Some(rhs.time), rhs.medium.clone())
     }
 }
 

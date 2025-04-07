@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+
 use crate::common::*;
 
 
@@ -39,7 +39,3 @@ pub trait Shape: Debug {
     fn sample_ref(&self, reference: &Interaction, u: &Point2) -> Interaction;
     fn pdf_ref(&self, reference: &Interaction, wi: &Vector3) -> Float;
 }
-
-pub trait Primitive: Debug {
-    
-} 

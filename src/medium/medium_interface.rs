@@ -1,20 +1,21 @@
+
+
 use crate::common::*;
 
-#[derive(Debug, Clone, Copy)]
-pub struct Medium {
+pub trait Medium: Debug {
 
 }
 
-impl Medium {
-    pub fn new() -> Self {
-        Medium{}
-    }
-}
+// impl Medium {
+//     pub fn new() -> Self {
+//         Medium{}
+//     }
+// }
 
 #[derive(Debug, Clone)]
 pub struct MediumInterface {
-    pub inside: Option<Arc<Medium>>,
-    pub outside: Option<Arc<Medium>>,
+    pub inside: Option<Arc<dyn Medium>>,
+    pub outside: Option<Arc<dyn Medium>>,
 }
 
 impl MediumInterface {
@@ -22,6 +23,20 @@ impl MediumInterface {
         Self {
             inside: None,
             outside: None
+        }
+    }
+
+    pub fn init(inside: Arc<dyn Medium>, outside: Arc<dyn Medium>) -> Self {
+        Self {
+            inside: Some(inside),
+            outside: Some(outside)
+        }
+    }
+
+    pub fn init_one(medium: Arc<dyn Medium>) -> Self {
+        Self {
+            inside: Some(medium.clone()),
+            outside: Some(medium)
         }
     }
 
@@ -40,5 +55,9 @@ impl MediumInterface {
         }
 
         return false;
+    }
+
+    pub fn is_medium_transition(&self) -> bool {
+        !self.inside_outside_same()
     }
 }

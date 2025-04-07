@@ -1,5 +1,6 @@
 pub use nalgebra as na;
 pub use std::sync::Arc;
+pub use std::fmt::Debug;
 
 pub use crate::geometry::*;
 pub use crate::medium::*;

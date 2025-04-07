@@ -65,13 +65,13 @@ impl Interaction {
 
     pub fn spawn_ray(&self, d: &Vector3) -> Ray {
         let o = offset_ray_origin(&self.p, &self.p_error, &self.n, &self.wo);
-        Ray::init(&o, d, Some(INFINITY), Some(self.time))
+        Ray::init(&o, d, Some(INFINITY), Some(self.time), None)
     }
 
     pub fn spawn_ray_to(&self, p2: &Point3) -> Ray {
         let o = offset_ray_origin(&self.p, &self.p_error, &self.n, &self.wo);
         let d= p2 - o;
-        Ray::init(&o, &d, Some(1.0 - EPSILON), Some(self.time))
+        Ray::init(&o, &d, Some(1.0 - EPSILON), Some(self.time), None)
     }
 
     pub fn spawn_ray_to_intersection(&self, it: &Self) -> Ray {
@@ -79,10 +79,10 @@ impl Interaction {
         let p = offset_ray_origin(&it.p, &it.p_error, &it.n, &it.wo);
         let d = p - o;
 
-        Ray::init(&o, &d, Some(1.0 - EPSILON), Some(self.time))
+        Ray::init(&o, &d, Some(1.0 - EPSILON), Some(self.time), None)
     }
 
-    pub fn get_medium(&self, w: &Vector3) -> Option<Arc<Medium>> {
+    pub fn get_medium(&self, w: &Vector3) -> Option<Arc<dyn Medium>> {
         if let Some(mi) = &self.medium_interface {
             return if w.dot(&self.n) > 0.0 { 
                 mi.outside.clone()
@@ -95,7 +95,7 @@ impl Interaction {
     }
 
     // If inside == outside then return, else err
-    pub fn get_medium_no_inter(&self) -> Option<Arc<Medium>> {
+    pub fn get_medium_no_inter(&self) -> Option<Arc<dyn Medium>> {
         if let Some(mi) = &self.medium_interface {
             assert!(mi.inside_outside_same());
             return mi.inside.clone(); 

@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use crate::common::*;
 
 pub trait BSDF: Debug {
     
