@@ -72,7 +72,7 @@ impl Bounds3f {
         Point3::new(lerp(t.x, self.p_min.x, self.p_max.x), lerp(t.y, self.p_min.y, self.p_max.y), lerp(t.z, self.p_min.z, self.p_max.z))
     }
 
-    pub fn offset(&self, p: Point3) -> Vector3 {
+    pub fn offset(&self, p: &Point3) -> Vector3 {
         let mut o = p - self.p_min;
         if self.p_max.x > self.p_min.x {
             o.x /= self.p_max.x - self.p_min.x;

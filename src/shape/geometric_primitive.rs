@@ -9,11 +9,11 @@ pub struct GeometricPrimitive {
 }
 
 impl GeometricPrimitive {
-    pub fn init(shape: Arc<dyn Shape>, material: Arc<dyn Material>, area_light: Arc<dyn AreaLight>, medium_interface: Option<MediumInterface>) -> Self {
+    pub fn init(shape: Arc<dyn Shape>, material: Option<Arc<dyn Material>>, area_light: Option<Arc<dyn AreaLight>>, medium_interface: Option<MediumInterface>) -> Self {
         Self {
             shape,
-            material: Some(material),
-            area_light: Some(area_light),
+            material,
+            area_light,
             medium_interface
         }
     }
@@ -57,7 +57,7 @@ impl Primitive for GeometricPrimitive {
         true
     }
 
-    fn intersect_p(&self, r: &Ray) -> bool {
+    fn intersect_p(&self, r: &mut Ray) -> bool {
         self.shape.intersect_p(r, false)
     }
 

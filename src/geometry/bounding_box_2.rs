@@ -57,7 +57,7 @@ impl Bounds2f {
         Point2::new(lerp(t.x, self.p_min.x, self.p_max.x), lerp(t.y, self.p_min.y, self.p_max.y))
     }
 
-    pub fn offset(&self, p: Point2) -> Vector2 {
+    pub fn offset(&self, p: &Point2) -> Vector2 {
         let mut o = p - self.p_min;
         if self.p_max.x > self.p_min.x {
             o.x /= self.p_max.x - self.p_min.x;
