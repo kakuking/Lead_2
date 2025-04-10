@@ -127,16 +127,11 @@ impl BVHAccel {
 
         let mut total_nodes = 0usize;
         let mut ordered_primitives: Vec<Arc<dyn Primitive>> = Vec::new();
-        println!("About to rec build");
         let mut root: BVHBuildNode = self.recursively_build(&mut primitive_infos, 0, num_primitives, &mut total_nodes, &mut ordered_primitives);
         
-        println!("rec build");
         self.primitives.clear();
         self.primitives = ordered_primitives;
 
-        // Flatten nodes
-        // TODO
-        // self.nodes = Vec::new();
         for _ in 0..total_nodes{
             self.nodes.push(LinearBVHNode::new());
         }

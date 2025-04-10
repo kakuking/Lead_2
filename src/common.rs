@@ -7,11 +7,14 @@ pub use crate::medium::*;
 pub use crate::interaction::*;
 pub use crate::shape::*;
 pub use crate::shading::*;
+pub use crate::spectrum::*;
+pub use crate::camera::*;
 pub use crate::math::*;
 
 // can set it between f32 and f64 here, just like pbr-book does
 pub type Float = f32;
 pub type Transform = na::Similarity3<Float>;
+pub type Spectrum = RBGSpectrum;
 
 pub const INFINITY: Float = Float::INFINITY;
 pub const EPSILON: Float = 0.0001;
