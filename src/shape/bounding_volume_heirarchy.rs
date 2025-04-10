@@ -127,8 +127,10 @@ impl BVHAccel {
 
         let mut total_nodes = 0usize;
         let mut ordered_primitives: Vec<Arc<dyn Primitive>> = Vec::new();
+        println!("About to rec build");
         let mut root: BVHBuildNode = self.recursively_build(&mut primitive_infos, 0, num_primitives, &mut total_nodes, &mut ordered_primitives);
-
+        
+        println!("rec build");
         self.primitives.clear();
         self.primitives = ordered_primitives;
 
@@ -170,7 +172,7 @@ impl BVHAccel {
         }
 
         let dim = centroid_bounds.max_extent(); // longer dimension
-        let mid;// = (start + end) / 2usize;
+        let mid;//= (start + end) / 2usize;
 
         if centroid_bounds.p_max[dim] == centroid_bounds.p_min[dim] {
             // is leaf
@@ -194,6 +196,8 @@ impl BVHAccel {
                 });
             } else {
                 const N_BUCKETS: usize = 12;
+                
+                #[derive(Debug)]
                 struct BucketInfo {
                     count: usize,
                     bounds: Bounds3f
@@ -243,30 +247,27 @@ impl BVHAccel {
                         min_cost_bucket = i;
                     }
                 }
+                
 
                 let leaf_cost = n_primitives as Float;
                 if n_primitives > self.max_primitives_in_node || min_cost < leaf_cost {
-                    // partition the vector
-                    let mut i = start;
-                    let mut j = end;
-                    while i < j {
-                        let b = {
-                            let mut bucket = (N_BUCKETS as f32 * centroid_bounds.offset(&primtive_infos[i].centroid)[dim]) as usize;
-                            if bucket == N_BUCKETS {
-                                bucket -= 1;
-                            }
-
-                            bucket
-                        };
-
-                        if b <= min_cost_bucket {
-                            i += 1;
+                    let mut left = start;
+                    let mut right = end - 1;
+                    
+                    while left <= right {
+                        let mut b_left = (N_BUCKETS as f32 * centroid_bounds.offset(&primtive_infos[left].centroid)[dim]) as usize;
+                        if b_left == N_BUCKETS {
+                            b_left -= 1;
+                        }
+                        
+                        if b_left <= min_cost_bucket {
+                            left += 1;
                         } else {
-                            j -= 1;
-                            primtive_infos.swap(i, j);
+                            primtive_infos.swap(left, right);
+                            right -= 1;
                         }
                     }
-                    mid = i;
+                    mid = left;
                 } else {
                     // is a leaf
                     let first_prim_offset = ordered_primitives.len();
@@ -282,10 +283,15 @@ impl BVHAccel {
         },
         }
 
-        let left_child = self.recursively_build(primtive_infos, start, mid, total_nodes, ordered_primitives);
-        let right_child = self.recursively_build(primtive_infos, mid, end, total_nodes, ordered_primitives);
-
-        node.init_interior(dim, Some(Box::from(left_child)), Some(Box::from(right_child)));
+        let left_child = match start == mid {
+            true => None,
+            _ => Some(Box::from(self.recursively_build(primtive_infos, start, mid, total_nodes, ordered_primitives)))
+        };
+        let right_child = match mid == end {
+            true => None,
+            false => Some(Box::from(self.recursively_build(primtive_infos, mid, end, total_nodes, ordered_primitives)))
+        };
+        node.init_interior(dim, left_child, right_child);
 
         return node;     
     }

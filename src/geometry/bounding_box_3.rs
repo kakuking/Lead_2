@@ -15,8 +15,8 @@ impl Bounds3f {
         let max_num: Float = INFINITY;
 
         Self {
-            p_min: Point3::new(min_num, min_num, min_num),
-            p_max: Point3::new(max_num, max_num, max_num)
+            p_min: Point3::new(max_num, max_num, max_num),
+            p_max: Point3::new(min_num, min_num, min_num)
         }
     }
 
