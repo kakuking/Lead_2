@@ -142,6 +142,8 @@ impl Mul<&SurfaceInteraction> for Transform {
     type Output = SurfaceInteraction;
 
     fn mul(self, rhs: &SurfaceInteraction) -> Self::Output {
+        let arc_self = Arc::from(self);
+
         let p = self * rhs.interaction.p;
         let p_error = self * rhs.interaction.p_error;
         let n = self * rhs.interaction.n;
@@ -154,14 +156,14 @@ impl Mul<&SurfaceInteraction> for Transform {
         let shape = rhs.shape.clone();
         let dpdu = self * rhs.dpdu;
         let dpdv = self * rhs.dpdv;
-        let dndu = apply_transform_to_normal(&rhs.dndu, &self);
-        let dndv = apply_transform_to_normal(&rhs.dndv, &self);
+        let dndu = apply_transform_to_normal(&rhs.dndu, &arc_self);
+        let dndv = apply_transform_to_normal(&rhs.dndv, &arc_self);
 
-        let mut sha_n =  apply_transform_to_normal(&rhs.shading.n, &self);
+        let mut sha_n =  apply_transform_to_normal(&rhs.shading.n, &arc_self);
         let sha_dpdu = self * rhs.shading.dpdu;
         let sha_dpdv = self * rhs.shading.dpdv;
-        let sha_dndu = apply_transform_to_normal(&rhs.shading.dndu, &self);
-        let sha_dndv = apply_transform_to_normal(&rhs.shading.dndv, &self);
+        let sha_dndu = apply_transform_to_normal(&rhs.shading.dndu, &arc_self);
+        let sha_dndv = apply_transform_to_normal(&rhs.shading.dndv, &arc_self);
 
         let dudx = rhs.dudx; let dvdx = rhs.dvdx; let dudy = rhs.dudy; let dvdy = rhs.dvdy;
 

@@ -59,7 +59,7 @@ fn main() {
         let z: Float = rng.random();
         let r: Float = rng.random();
 
-        let object_to_world = na::Similarity3::new(Vector3::new(x, y, z), Vector3::identity() * 0.0, 1.0);
+        let object_to_world = na::Projective3::identity();
         let world_to_object = object_to_world.inverse();
 
         let sph = Sphere::init(

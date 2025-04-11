@@ -11,8 +11,22 @@ pub trait Camera: Debug {
     fn camera_to_world(&self) -> Arc<Transform>;
     fn shutter_open(&self) -> Float;
     fn shutter_close(&self) -> Float;
-    fn medium(&self) -> Arc<dyn Medium>;
+    fn medium(&self) -> Option<Arc<dyn Medium>>;
     fn film(&self) -> Arc<Film>;
+    
+    fn set_camera_to_world(&mut self, other: Arc<Transform>);
+    fn set_shutter_open(&mut self, other: Float);
+    fn set_shutter_close(&mut self, other: Float);
+    fn set_medium(&mut self, other: Option<Arc<dyn Medium>>);
+    fn set_film(&mut self, other: Arc<Film>);
+
+    fn init(&mut self, camera_to_world: Arc<Transform>, shutter_open: Float, shutter_close: Float, film: Arc<Film>, medium: Option<Arc<dyn Medium>>) {
+        self.set_camera_to_world(camera_to_world);
+        self.set_shutter_open(shutter_open);
+        self.set_shutter_close(shutter_close);
+        self.set_film(film);
+        self.set_medium(medium);
+    }
 
     fn generate_ray(&self, sample: &CameraSample, r: &mut Ray) -> Float;
     fn generate_ray_differential(&self, sample: &CameraSample, rd: &mut RayDifferential) -> Float {
