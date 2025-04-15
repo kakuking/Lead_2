@@ -8,3 +8,4 @@ pub use film::Film;
 
 // You can add your own implementations here
 pub mod orthographic;
+pub mod perspective;

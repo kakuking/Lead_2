@@ -48,7 +48,7 @@ impl OrthographicCamera {
     pub fn init(camera_to_world: Arc<Transform>, screen_window: Bounds2f, shutter_open: Float, shutter_close: Float, lens_radius: Float, focal_distance: Float, film: Arc<Film>, medium: Option<Arc<dyn Medium>>) -> Self {
         let mut ret = Self::new();
 
-        let camera_to_screen = Self::creat_orthographic(0.0, 1.0);
+        let camera_to_screen = Self::create_orthographic(0.0, 1.0);
         ProjectiveCamera::init(&mut ret, camera_to_world, Arc::from(camera_to_screen), screen_window, shutter_open, shutter_close, lens_radius, focal_distance, film, medium);
 
         ret.dx_camera = ret.raster_to_camera.transform_vector(&Vector3::new(1.0, 0.0, 0.0));
@@ -57,7 +57,7 @@ impl OrthographicCamera {
         ret
     }
 
-    fn creat_orthographic(z_near: Float, z_far: Float) -> Transform {
+    fn create_orthographic(z_near: Float, z_far: Float) -> Transform {
         let scaling = scale(&Vector3::new(1.0, 1.0, 1.0/(z_far - z_near)));
         let translation = translate(&Vector3::new(0.0, 0.0, -z_near));
 
@@ -101,8 +101,48 @@ impl Camera for OrthographicCamera {
         1.0
     }
 
-    fn generate_ray_differential(&self, _sample: &camera::CameraSample, _rd: &mut RayDifferential) -> Float {
-        todo!("Implement in 6.2.1")
+    fn generate_ray_differential(&self, sample: &camera::CameraSample, r: &mut RayDifferential) -> Float {
+        let p_film = Point3::new(sample.p_film.x, sample.p_film.y, 0.0);
+        let p_camera = self.raster_to_camera.transform_vector(&p_film.coords);
+        let p_camera = Point3::new(p_camera.x, p_camera.y, p_camera.z);
+
+        *r = RayDifferential::init(&p_camera, &Vector3::new(0.0, 0.0, 1.0), Some(INFINITY), Some(0.0), self.medium().clone());
+
+        if self.lens_radius > 0.0 {
+            let p_lens = self.lens_radius * sample_concentric_disc(&sample.p_lens);
+
+            let ft = self.focal_distance / r.ray.d.z;
+            let p_focus = r.ray.at(ft);
+
+            (*r).ray.o = Point3::new(p_lens.x, p_lens.y, 0.0);
+            (*r).ray.d = (p_focus - r.ray.o).normalize()
+        }
+
+        if self.lens_radius > 0.0 {
+            let p_lens = self.lens_radius * sample_concentric_disc(&sample.p_lens);
+            let ft = self.focal_distance / r.ray.d.z;
+
+            let mut p_focus = p_camera + self.dx_camera + (ft * Vector3::new(0.0, 0.0, 0.1));
+            (*r).rx_origin = Point3::new(p_lens.x, p_lens.y, 0.0);
+            (*r).rx_direction = (p_focus - r.rx_origin).normalize();
+
+            p_focus = p_camera + self.dy_camera + (ft * Vector3::new(0.0, 0.0, 1.0));
+            (*r).ry_origin = Point3::new(p_lens.x, p_lens.y, 0.0);
+            (*r).ry_direction = (p_focus - r.ry_origin).normalize();
+        } else {
+            (*r).rx_origin = r.ray.o + self.dx_camera;
+            (*r).ry_origin = r.ray.o + self.dy_camera;
+            (*r).rx_direction = r.ray.d;
+            (*r).ry_direction = r.ray.d;
+        }
+
+        (*r).ray.time = lerp(sample.time, self.shutter_open, self.shutter_close);
+        (*r).has_differentials = true;
+        (*r).ray.medium = self.medium.clone();
+
+        *r = apply_transform_to_ray_differential(&r, &self.camera_to_world);
+
+        1.0
     }
     
     fn we(&self, _p_raster_2: Vec<Point2>) -> Spectrum {

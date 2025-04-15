@@ -43,3 +43,22 @@ pub fn apply_transform_to_ray(r: &Ray, t: &Arc<Transform>) -> Ray {
 
     Ray::init(&r_o, &r_d, Some(r.t_max), Some(r.time), r.medium.clone())
 }
+
+pub fn apply_transform_to_ray_differential(r: &RayDifferential, t: &Arc<Transform>) -> RayDifferential { 
+    let ray = apply_transform_to_ray(&r.ray, t);
+
+    let rx_origin = t.transform_point(&r.rx_origin); 
+    let ry_origin = t.transform_point(&r.ry_origin); 
+    let rx_direction = t.transform_vector(&r.rx_direction);
+    let ry_direction = t.transform_vector(&r.ry_direction);
+    let has_differentials = r.has_differentials;
+
+    RayDifferential {
+        ray,
+        rx_origin,
+        ry_origin,
+        rx_direction,
+        ry_direction,
+        has_differentials
+    }
+}
