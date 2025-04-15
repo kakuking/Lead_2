@@ -10,3 +10,6 @@ Current progress:
    1.  medium, medium_interface
    2.  bsdf, bssrdf, material,
    3.  areaLight
+4. Added camera traits, projective camera trait
+   1. Added Orthographic camera
+   2. Added (most) of Perspective camera
