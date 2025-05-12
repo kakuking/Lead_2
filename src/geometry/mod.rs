@@ -1,12 +1,14 @@
 pub mod ray;
 pub mod bounding_box_2;
 pub mod bounding_box_3;
+pub mod helpers;
 
 pub use ray::{Ray, RayDifferential, offset_ray_origin};
 pub use bounding_box_2::Bounds2f;
 pub use bounding_box_3::Bounds3f;
+pub use helpers::{ceil, floor, min, max};
 
-use crate::common::{Vector3, Transform, Arc};
+use crate::common::{Arc, Transform, Vector3};
 
 pub fn face_forward(n: &Vector3, v: &Vector3) -> Vector3 {
     return if n.dot(v) < 0.0 {

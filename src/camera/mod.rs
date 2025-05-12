@@ -2,7 +2,7 @@ pub mod camera;
 pub mod film;
 pub mod projective;
 
-pub use camera::Camera;
+pub use camera::{Camera, CameraSample};
 pub use projective::ProjectiveCamera;
 pub use film::Film;
 

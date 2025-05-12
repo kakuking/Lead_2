@@ -1,5 +1,5 @@
 pub use nalgebra as na;
-pub use std::sync::Arc;
+pub use std::sync::{Arc, Mutex};
 pub use std::fmt::Debug;
 
 pub use crate::geometry::*;
@@ -10,6 +10,7 @@ pub use crate::shading::*;
 pub use crate::spectrum::*;
 pub use crate::camera::*;
 pub use crate::math::*;
+pub use crate::sampler::*;
 
 // can set it between f32 and f64 here, just like pbr-book does
 pub type Float = f32;
@@ -18,6 +19,7 @@ pub type Spectrum = RBGSpectrum;
 
 pub const INFINITY: Float = Float::INFINITY;
 pub const EPSILON: Float = 0.0001;
+pub const ONE_MINUS_EPSILON: Float = 0.9999;
 
 pub type Point2 = na::Point2<Float>;
 pub type Point3 = na::Point3<Float>;

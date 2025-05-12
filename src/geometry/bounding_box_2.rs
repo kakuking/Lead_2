@@ -83,6 +83,50 @@ impl Bounds2f {
             0.0
         }
     }
+
+    pub fn union_pt(b: &Self, p: &Point2) -> Self {
+        Self {
+            p_min: Point2::new(
+                b.p_min.x.min(p.x), b.p_min.y.min(p.y)
+            ),
+            p_max: Point2::new(
+                b.p_max.x.max(p.x), b.p_max.y.max(p.y)
+            )
+        }
+    }
+
+    pub fn union(b1: &Self, b2: &Self) -> Self {
+        Self {
+            p_min: Point2::new(
+                b1.p_min.x.min(b2.p_min.x), b1.p_min.y.min(b2.p_min.y)
+            ),
+            p_max: Point2::new(
+                b1.p_max.x.max(b2.p_max.x), b1.p_max.y.max(b2.p_max.y)
+            )
+        }
+    }
+
+    pub fn intersect(b1: &Self, b2: &Self) -> Self {
+        Self {
+            p_min: Point2::new(
+                b1.p_min.x.max(b2.p_min.x), b1.p_min.y.max(b2.p_min.y)
+            ),
+            p_max: Point2::new(
+                b1.p_max.x.min(b2.p_max.x), b1.p_max.y.min(b2.p_max.y)
+            )
+        }
+    }
+
+    pub fn overlaps(b1: &Self, b2: &Self) -> bool {
+        let x = (b1.p_max.x >= b2.p_min.x) && (b1.p_min.x <= b2.p_max.x);
+        let y = (b1.p_max.y >= b2.p_min.y) && (b1.p_min.y <= b2.p_max.y);
+
+        x && y
+    }
+
+    pub fn expand(b: &Self, delta: Float) ->  Self {
+        Self::init(&(b.p_min - Vector2::new(delta, delta)), &(b.p_max + Vector2::new(delta, delta)))
+    }
 }
 
 impl Index<usize> for Bounds2f {

@@ -9,6 +9,7 @@ pub mod shading;
 pub mod math;
 pub mod spectrum;
 pub mod camera;
+pub mod sampler;
 
 pub mod common;
 
