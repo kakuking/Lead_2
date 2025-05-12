@@ -45,8 +45,6 @@ fn runtime_test(primitive: &dyn Primitive, name: &str, r: Option<Vector3>) {
 }
 
 fn main() {
-    // println!("Hello, world!");
-
     let mut primitives: Vec<Arc<GeometricPrimitive>> = Vec::new();
     let mut rng = rand::rng();
 

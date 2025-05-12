@@ -1,6 +1,7 @@
 pub mod camera;
 pub mod film;
 pub mod projective;
+pub mod write_image;
 
 pub use camera::{Camera, CameraSample};
 pub use projective::ProjectiveCamera;

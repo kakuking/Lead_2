@@ -93,6 +93,12 @@ impl Bounds3f {
         self.p_min.z <= c.z && c.z <= self.p_max.z 
     }
 
+    pub fn inside_exclusive(&self, c: &Point3) -> bool {
+        self.p_min.x <= c.x && c.x < self.p_max.x && 
+        self.p_min.y <= c.y && c.y < self.p_max.y && 
+        self.p_min.z <= c.z && c.z < self.p_max.z 
+    }
+
     pub fn bounding_sphere(&self, c: &mut Point3, rad: &mut Float) {
         let diag = self.diagonal();
         *c = self.p_min + diag * 0.5;

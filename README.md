@@ -12,4 +12,7 @@ Current progress:
    3.  areaLight
 4. Added camera traits, projective camera trait
    1. Added Orthographic camera
-   2. Added (most) of Perspective camera
+   2. Added of Perspective camera
+5. Added Filters
+6. Added Film, write image support
+7. Next up - Reflection models!

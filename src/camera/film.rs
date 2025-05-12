@@ -1,4 +1,5 @@
 use crate::common::*;
+use write_image::*;
 
 const FILTER_TABLE_WIDTH: usize = 16usize;
 
@@ -101,7 +102,7 @@ impl FilmTile {
 struct Pixel {
     xyz: [Float; 3],
     filter_weight_sum: Float,
-    _splat_xyz: [Float; 3]
+    splat_xyz: [Float; 3]   // TODO: make splat_xyz atomic
 }
 
 impl Pixel {
@@ -109,8 +110,17 @@ impl Pixel {
         Self {
             xyz: [0.0; 3],
             filter_weight_sum: 0.0,
-            _splat_xyz: [0.0; 3]
+            splat_xyz: [0.0; 3]
         }
+    }
+
+    pub fn set_splat(&mut self, idx: usize, value: Float) {
+        self.splat_xyz[idx] = value;
+        
+    }
+
+    pub fn add_splat(&mut self, idx: usize, value: Float) {
+        self.splat_xyz[idx] += value;
     }
 }
 
@@ -124,7 +134,7 @@ pub struct Film {
 
     pixels: Arc<Mutex<Vec<Pixel>>>,
     filter_table: [Float; FILTER_TABLE_WIDTH * FILTER_TABLE_WIDTH],
-    _scale: Float
+    scale: Float
 }
 
 impl Film {
@@ -138,7 +148,7 @@ impl Film {
 
             pixels: Arc::from(Mutex::from(Vec::<Pixel>::new())),
             filter_table: [0.0; FILTER_TABLE_WIDTH * FILTER_TABLE_WIDTH],
-            _scale: 0.0,
+            scale: 0.0,
         }
     }
 
@@ -174,7 +184,7 @@ impl Film {
             cropped_pixel_bounds,
             pixels,
             filter_table,
-            _scale: scale
+            scale
         }
     }
 
@@ -222,7 +232,7 @@ impl Film {
                 let pixel = Point2::new(x as f32, y as f32);
 
                 let tile_pixel = tile.get_pixel(&pixel);
-                let merge_pixel = &mut pixels[self.get_pixel_offset(pixel)];
+                let merge_pixel = &mut pixels[self.get_pixel_offset(&pixel)];
                 let mut x_contrib: Float = 0.0;
                 let mut y_contrib: Float = 0.0;
                 let mut z_contrib: Float = 0.0;
@@ -235,23 +245,103 @@ impl Film {
         }
     }
 
-    pub fn set_image(&self, _image: Vec<Spectrum>) {
-        todo!("TO DO")
+    pub fn add_splat(&mut self, p: &Point2, v: &Spectrum) {
+        if !Bounds2f::inside_exclusive(&self.cropped_pixel_bounds, p) { return; }
+
+        let mut x_contrib: Float = 0.0;
+        let mut y_contrib: Float = 0.0;
+        let mut z_contrib: Float = 0.0;
+        to_xyz(v, &mut x_contrib, &mut y_contrib, &mut z_contrib);
+
+        let mut pixels = self.pixels.lock().unwrap();
+        let pixel = &mut pixels[self.get_pixel_offset(p)];
+
+        pixel.add_splat(0, x_contrib);
+        pixel.add_splat(1, y_contrib);
+        pixel.add_splat(2, z_contrib);
     }
 
-    pub fn add_splat(&mut self, _p: &Point2, _v: &Spectrum) {
-        todo!("TO DO")
+    // If the integrator sends all teh spectra at once
+    pub fn set_image(&self, image: Vec<Spectrum>) {
+        let n_pixels = self.cropped_pixel_bounds.area() as usize;
+        let mut pixels = self.pixels.lock().unwrap();
+        for i in 0..n_pixels {
+            let p = &mut pixels[i];
+
+            let mut x_contrib: Float = 0.0;
+            let mut y_contrib: Float = 0.0;
+            let mut z_contrib: Float = 0.0;
+            to_xyz(&image[i], &mut x_contrib, &mut y_contrib, &mut z_contrib);
+            p.xyz = [x_contrib, y_contrib, z_contrib];
+            p.filter_weight_sum = 1.0;
+            
+            p.set_splat(0, 0.0);
+            p.set_splat(1, 0.0);
+            p.set_splat(2, 0.0);
+        }
     }
 
-    pub fn write_image(&self, _splat_scale: Float) {
-        todo!("TO DO")
+    pub fn write_image(&self, splat_scale: Float) {
+        let num_pixels = self.cropped_pixel_bounds.area() as usize;
+        let mut rgb: Vec<Float> = vec![0.0; 3 * num_pixels];
+        let mut offset = 0usize;
+
+        let min_x = self.cropped_pixel_bounds.p_min.x;
+        let min_y = self.cropped_pixel_bounds.p_min.y;
+        let max_x = self.cropped_pixel_bounds.p_max.x;
+        let max_y = self.cropped_pixel_bounds.p_max.y;
+
+        let mut pixels = self.pixels.lock().unwrap();
+
+        let mut y = min_y as f32;
+        while y < max_y {
+            let mut x = min_x;
+            while x < max_x {
+                let p = Point2::new(x, y);
+                let pixel = &mut pixels[self.get_pixel_offset(&p)];
+
+                let rgb_spectrum = from_xyz(pixel.xyz[0], pixel.xyz[1], pixel.xyz[2]);
+                rgb[3 * offset + 0] = rgb_spectrum.x;
+                rgb[3 * offset + 1] = rgb_spectrum.y;
+                rgb[3 * offset + 2] = rgb_spectrum.z;
+
+                let filter_weight_sum = pixel.filter_weight_sum;
+
+                if filter_weight_sum != 0.0 {
+                    let inv_weight = 1.0 / filter_weight_sum;
+                    rgb[3 * offset + 0] = (rgb[3 * offset + 0] * inv_weight).max(0.0);
+                    rgb[3 * offset + 1] = (rgb[3 * offset + 1] * inv_weight).max(0.0);
+                    rgb[3 * offset + 2] = (rgb[3 * offset + 2] * inv_weight).max(0.0);
+                }
+
+                let splat_rgb = from_xyz(pixel.splat_xyz[0], pixel.splat_xyz[1], pixel.splat_xyz[2]);
+
+                rgb[3 * offset + 0] += splat_scale * splat_rgb.x;
+                rgb[3 * offset + 1] += splat_scale * splat_rgb.y;
+                rgb[3 * offset + 2] += splat_scale * splat_rgb.z;
+
+                rgb[3 * offset + 0] *= self.scale;
+                rgb[3 * offset + 1] *= self.scale;
+                rgb[3 * offset + 2] *= self.scale;
+                
+                x += 1.0;
+                offset += 1;
+            }
+            y += 1.0;
+        }
+
+        // todo!("Implement writing the rgb vec to an image!")
+        let width = (max_x - min_x) as usize;
+        let height = (max_y - min_y) as usize;
+        write_png_image(&self.filename, &rgb, width, height);
+        write_exr_image(&self.filename, rgb, height, width);
     }
 
     pub fn clear(&mut self) {
         todo!("TO DO")
     }
 
-    fn get_pixel_offset(&self, p: Point2) -> usize {
+    fn get_pixel_offset(&self, p: &Point2) -> usize {
         let width = (self.cropped_pixel_bounds.p_max.x - self.cropped_pixel_bounds.p_min.x) as usize;
         let offset = (p.x - self.cropped_pixel_bounds.p_min.x) as usize + (p.y - self.cropped_pixel_bounds.p_min.y) as usize * width;
 
